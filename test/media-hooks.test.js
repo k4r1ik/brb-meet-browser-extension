@@ -8,6 +8,7 @@ const track = (kind, name) => ({ kind, name, stopped: 0, stop() { this.stopped +
 
 function setup({ userInitiated = true, state, devices } = {}) {
   const gumCalls = [];
+  const audioOpened = [];
   const events = [];
   const relayCalls = [];
   const flags = { userInitiated, failVideo: null, deferVideo: null };
@@ -26,6 +27,7 @@ function setup({ userInitiated = true, state, devices } = {}) {
         return { getVideoTracks: () => [t], getAudioTracks: () => [] };
       }
       const a = track('audio', 'mic');
+      audioOpened.push(a);
       return { getVideoTracks: () => [], getAudioTracks: () => [a] };
     },
     dispatchEvent: (e) => events.push(e),
@@ -48,7 +50,7 @@ function setup({ userInitiated = true, state, devices } = {}) {
     log: () => {},
   });
   const gum = (c) => target.getUserMedia.call(target, c);
-  return { target, gum, gumCalls, relayCalls, gateCalls, events, flags, hooks };
+  return { target, gum, gumCalls, audioOpened, relayCalls, gateCalls, events, flags, hooks };
 }
 
 const wait = () => new Promise((r) => setTimeout(r, 5));
@@ -139,6 +141,8 @@ test('in LIVE a camera error passes to Meet and the mic opened for it is stopped
   const s = setup();
   s.flags.failVideo = new Error('NotReadableError');
   await assert.rejects(s.gum({ video: { deviceId: { exact: 'cam1' } }, audio: true }), /NotReadableError/);
+  assert.strictEqual(s.audioOpened.length, 1);
+  assert.strictEqual(s.audioOpened[0].stopped, 1, 'mic track left open after the camera failed');
 });
 
 test('a camera open that finishes after BRB was entered is discarded and stopped', async () => {
