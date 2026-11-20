@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "BRB Camera",
+  "version": "0.1.0",
+  "description": "Shows a Be Right Back card in Google Meet instead of your camera.",
+  "host_permissions": ["https://meet.google.com/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://meet.google.com/*"],
+      "js": ["src/page/state.js", "src/page/card.js", "src/page/relay.js", "src/page/track-gate.js", "src/page/media-hooks.js", "src/page/main.js"],
+      "world": "MAIN",
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ]
+}
