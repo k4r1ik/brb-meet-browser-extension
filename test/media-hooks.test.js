@@ -259,3 +259,18 @@ test('pre-join: a camera open that finishes after BRB was picked is discarded (n
   await slow;
   assert.ok(!s.relayCalls.some((c) => c[0] === 'camera'));
 });
+
+test('re-picking BRB Camera while the camera is reopening never lets the live camera through', async () => {
+  const s = setup({ userInitiated: true, state: { mode: 'BRB', openToken: 1 } });
+  let release;
+  s.flags.deferVideo = new Promise((r) => { release = r; });
+  const slow = s.gum({ video: { deviceId: { exact: 'cam1' } } }); // leaving BRB, camera opening
+  await wait();
+  s.flags.deferVideo = null;
+  await s.gum({ video: { deviceId: { exact: BRB } } }); // user picks BRB again
+  release();
+  await slow;
+  assert.ok(!s.relayCalls.some((c) => c[0] === 'camera'), 'late camera reached the relay');
+  assert.strictEqual(s.hooks.getState().mode, 'BRB');
+  assert.deepStrictEqual(s.gateCalls.filter((c) => c[0] === 'brb').pop(), ['brb', true]);
+});

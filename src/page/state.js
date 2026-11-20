@@ -22,6 +22,13 @@
       return { action: 'LEAVE_BRB', token: next.openToken, next };
     }
 
+    // Picking BRB Camera while the real camera is still opening: back to BRB, and the new token
+    // makes onCameraOpened discard that open (otherwise the live camera would go out after the pick).
+    if (state.mode === 'REACQUIRING' && wantsBrb) {
+      const next = { ...state, mode: 'BRB', openToken: state.openToken + 1 };
+      return { action: 'PICK_BRB', token: next.openToken, next };
+    }
+
     // BRB or REACQUIRING with no deliberate real-camera pick, or any unknown mode: stay on the card.
     return { action: 'CARD', next: state };
   }

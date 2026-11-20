@@ -85,3 +85,12 @@ test('functions do not mutate their input', () => {
   S.onVideoRequest(s, { requestedDeviceId: 'cam1', userInitiated: true });
   S.onCameraOpened(s, 1);
 });
+
+test('re-picking BRB Camera while the real camera is reopening goes back to BRB and cancels that open', () => {
+  const left = S.onVideoRequest(brb(), { requestedDeviceId: 'cam1', userInitiated: true });
+  assert.strictEqual(left.next.mode, 'REACQUIRING');
+  const repick = S.onVideoRequest(left.next, { requestedDeviceId: S.BRB_ID, userInitiated: true });
+  assert.strictEqual(repick.action, 'PICK_BRB');
+  assert.strictEqual(repick.next.mode, 'BRB');
+  assert.strictEqual(S.onCameraOpened(repick.next, left.token).action, 'DISCARD');
+});
